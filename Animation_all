@@ -1,0 +1,156 @@
+function Animation()
+%
+% [OC] US. initial unemployment claims from 1967 onward, with superimposed recessions and constant axes.
+
+% Data downloaded from US Dept. of Labor: https://oui.doleta.gov/unemploy/claims.asp
+% Recession dates were sourced from Wikipedia: https://en.wikipedia.org/wiki/List_of_recessions_in_the_United_States
+% Visualisation was produced in Matlab R2019a.
+
+
+D = xlsread('/Users/bodem/Dropbox/Rapid prototyping/Unemployment/UNRATE.xls');
+D = D(:,2);
+Unem = repmat(D(1),6,1);
+for i = 1:length(D)
+    if mod(i,12) < 4
+        Unem = [Unem; repmat(D(i),1,5)'];
+    else
+        Unem = [Unem; repmat(D(i),1,4)'];
+    end
+end
+Unem = [Unem; repmat(Unem(end),5,1)];
+
+[D,T] = xlsread('/Users/bodem/Dropbox/Rapid prototyping/Unemployment/unemployment.xlsx');
+U = D(:,2);
+Date = [1967:1/52:2020+20/52]';
+
+h = figure(1); clf
+h.Position = [100 100 1200 500];
+h.Color = 0.5.*ones(1,3); %Set background color of figure window
+subplot('position',[0.07 0.07 0.83 0.9])
+hold on, box on
+
+xlim([min(Date) 2022])
+ylim([0 3e6])
+CL = get(gca,'colororder');
+set(gca,'color',0.5.*ones(1,3),'ytick',[0:1:3].*1e6,'yticklabel',[0 1 2 3],'fontsize',14)
+ylabel('Initial unemployment claims (millions)','interpreter','latex','fontsize',20,'color',[0.5 0 0])
+
+text(2022.5,1e6,'4%','color','b','fontsize',14)
+text(2022.5,0.9e6,' unemployment','color','b','fontsize',14)
+
+text(2022.5,2e6,'8%','color','b','fontsize',14)
+text(2022.5,1.9e6,' unemployment','color','b','fontsize',14)
+
+text(2022.5,3e6,'12%','color','b','fontsize',14)
+text(2022.5,2.9e6,' unemployment','color','b','fontsize',14)
+
+cols = flipud(autumn(100));
+
+MakeGif = 1;
+
+filename = 'UnemploymentClaims.gif';
+J = 13;
+plot_recession(nan,0.85.*ones(1,3))
+
+for t = 1:2775
+    
+    color = min(100,round(100*mean(U(t:t+1))/1e6));
+    plot(Date(t:t+1),U(t:t+1),'linewidth',1.5,'color',cols(color,:))
+    
+    plot(Date(t:t+1),0.25e6.*Unem(t:t+1),'linewidth',1.5,'color','b')
+    
+    
+    if mod(t,J) == 1
+        if MakeGif == 1
+            % Capture the plot as an image
+            frame = getframe(h);
+            im = frame2im(frame);
+            [imind,cm] = rgb2ind(im,256);
+            
+            % Write to the GIF File
+            if t == 1
+                imwrite(imind,cm,filename,'gif', 'Loopcount',0);
+            else
+                imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',0.0025);
+            end
+        else
+            drawnow
+        end
+        
+    end
+end
+
+t = 2776;
+X = linspace(Date(t),Date(t+1),20);
+Y = linspace(U(t),U(t+1),20);
+
+for t = 1:length(X)-1
+    
+    color = min(100,round(100*Y(t+1)/1e6));
+    plot(X(t:t+1),Y(t:t+1),'linewidth',2.5,'color',cols(color,:))
+    
+    if MakeGif == 1
+        % Capture the plot as an image
+        frame = getframe(h);
+        im = frame2im(frame);
+        [imind,cm] = rgb2ind(im,256);
+        
+        % Write to the GIF File
+        imwrite(imind,cm,filename,'gif','WriteMode','append','DelayTime',0.0025);
+    else
+        drawnow
+    end
+end
+
+
+function plot_recession(year,col)
+
+Y = 1.25e6;
+% if year == 1969
+X = [1969+11/12 1970+11/12];
+pp = patch(X([1 2 2 1]),[0 0 4e6 4e6],col);
+set(pp,'facealpha',1,'edgecolor','none')
+text(mean(X),Y,'Recession of 1969-70','rotation',90,'interpreter','latex','fontsize',20)
+% end
+
+% if year == 1973
+X = [1973+10/12 1975+4/12];
+pp = patch(X([1 2 2 1]),[0 0 4e6 4e6],col);
+set(pp,'facealpha',1,'edgecolor','none')
+text(mean(X),Y,'Recession of 1973-75','rotation',90,'interpreter','latex','fontsize',20)
+% end
+
+% if year == 1980
+X = [1980+0/12 1980+7/12];
+pp = patch(X([1 2 2 1]),[0 0 4e6 4e6],col);
+set(pp,'facealpha',1,'edgecolor','none')
+text(mean(X),Y,'1980 recession','rotation',90,'interpreter','latex','fontsize',20)
+% end
+
+% if year == 1981
+X = [1981+6/12 1982+12/12];
+pp = patch(X([1 2 2 1]),[0 0 4e6 4e6],col);
+set(pp,'facealpha',1,'edgecolor','none')
+text(mean(X),Y,'1981-82 recession','rotation',90,'interpreter','latex','fontsize',20)
+% end
+
+% if year == 1990
+X = [1990+6/12 1991+4/12];
+pp = patch(X([1 2 2 1]),[0 0 4e6 4e6],col);
+set(pp,'facealpha',1,'edgecolor','none')
+text(mean(X),Y,'Early 1990s recession','rotation',90,'interpreter','latex','fontsize',20)
+% end
+
+% if year == 2001
+X = [2001+4/12 2001+12/12];
+pp = patch(X([1 2 2 1]),[0 0 4e6 4e6],col);
+set(pp,'facealpha',1,'edgecolor','none')
+text(mean(X),Y,'Early 2000s recession','rotation',90,'interpreter','latex','fontsize',20)
+% end
+
+% if year == 2007
+X = [2007+11/12 2009+7/12];
+pp = patch(X([1 2 2 1]),[0 0 4e6 4e6],col);
+set(pp,'facealpha',1,'edgecolor','none')
+text(mean(X),Y,'Great Recession','rotation',90,'interpreter','latex','fontsize',20)
+% end
